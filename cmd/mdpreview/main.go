@@ -57,9 +57,22 @@ func main() {
 }
 
 func readyMessage(host string, port int, startup time.Duration) string {
+	const (
+		reset     = "\x1b[0m"
+		blue      = "\x1b[38;2;10;170;255m"
+		boldBlue  = "\x1b[1;38;2;10;170;255m"
+		lightGray = "\x1b[38;2;163;163;163m"
+
+		styledAppName = boldBlue + "mdpreview" + reset
+		styledArrow   = blue + "➜" + reset
+		styledURL     = lightGray + "http://%s/" + reset
+	)
+
 	return fmt.Sprintf(
-		"\n  mdpreview  ready in %s\n\n  ➜  Local:   http://%s/\n\n",
+		"\n  %s λ ready in %s\n\n  %s  Local:   "+styledURL+"\n\n",
+		styledAppName,
 		formatStartupDuration(startup),
+		styledArrow,
 		net.JoinHostPort(host, fmt.Sprintf("%d", port)),
 	)
 }
