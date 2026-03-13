@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1"
+    />
+    <title>Markdown Preview</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --border: #cfcfcf;
+        --text: #1f2937;
+        --muted: #6b7280;
+        --surface: #f5f5f5;
+        --panel: #ffffff;
+        --accent: #1d4ed8;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: var(--surface);
+        color: var(--text);
+        font-family: "Iosevka Fixed", "Fira Code", "SFMono-Regular", Consolas, monospace;
+      }
+
+      .markdown-app {
+        display: grid;
+        grid-template-columns: minmax(320px, 1fr) minmax(320px, 1fr);
+        min-height: 100vh;
+      }
+
+      .panel {
+        min-width: 0;
+        background: var(--panel);
+      }
+
+      .panel + .panel {
+        border-left: 6px solid var(--border);
+      }
+
+      .editor {
+        width: 100%;
+        min-height: 100vh;
+        border: 0;
+        resize: none;
+        padding: 18px 24px;
+        background: #fafafa;
+        color: #1d4ed8;
+        font: inherit;
+        font-size: 1rem;
+        line-height: 1.45;
+        outline: none;
+        tab-size: 2;
+      }
+
+      .preview-wrap {
+        min-height: 100vh;
+        padding: 18px 24px 48px;
+        overflow: auto;
+      }
+
+      .preview {
+        max-width: 920px;
+        margin: 0 auto;
+        font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+        font-size: 1rem;
+        line-height: 1.6;
+        color: #111827;
+      }
+
+      .preview > :first-child {
+        margin-top: 0;
+      }
+
+      .preview h1,
+      .preview h2,
+      .preview h3,
+      .preview h4,
+      .preview h5,
+      .preview h6 {
+        margin: 0 0 0.6em;
+        font-family: "IBM Plex Sans Condensed", "Segoe UI", sans-serif;
+        line-height: 1.2;
+        color: #111827;
+      }
+
+      .preview h1 {
+        font-size: 3rem;
+        font-weight: 700;
+        border-bottom: 2px solid #d1d5db;
+        padding-bottom: 0.3em;
+      }
+
+      .preview h2 {
+        font-size: 2.25rem;
+      }
+
+      .preview p,
+      .preview ul,
+      .preview ol,
+      .preview table,
+      .preview pre,
+      .preview blockquote,
+      .preview hr {
+        margin: 0 0 1rem;
+      }
+
+      .preview ul,
+      .preview ol {
+        padding-left: 1.6rem;
+      }
+
+      .preview li + li {
+        margin-top: 0.2rem;
+      }
+
+      .preview a {
+        color: var(--accent);
+      }
+
+      .preview code {
+        padding: 0.12rem 0.35rem;
+        border-radius: 4px;
+        background: #e5e7eb;
+        font-family: "Iosevka Fixed", "Fira Code", monospace;
+        font-size: 0.95em;
+      }
+
+      .preview pre {
+        overflow-x: auto;
+        padding: 0.85rem 1rem;
+        border-radius: 8px;
+        background: #111827;
+        color: #f9fafb;
+      }
+
+      .preview pre code {
+        padding: 0;
+        background: transparent;
+        color: inherit;
+      }
+
+      .preview blockquote {
+        padding-left: 1rem;
+        border-left: 4px solid #d1d5db;
+        color: var(--muted);
+      }
+
+      .preview hr {
+        border: 0;
+        border-top: 1px solid #d1d5db;
+      }
+
+      .preview table {
+        border-collapse: collapse;
+      }
+
+      .preview th,
+      .preview td {
+        padding: 0.65rem 0.9rem;
+        border: 1px solid #cbd5e1;
+        text-align: left;
+      }
+
+      .preview th {
+        font-weight: 700;
+      }
+
+      .preview .empty {
+        color: var(--muted);
+      }
+
+      @media (max-width: 900px) {
+        .markdown-app {
+          grid-template-columns: 1fr;
+        }
+
+        .panel + .panel {
+          border-left: 0;
+          border-top: 6px solid var(--border);
+        }
+
+        .editor,
+        .preview-wrap {
+          min-height: 50vh;
+          overflow: auto;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="markdown-app">
+      <section class="panel">
+        <textarea id="editor" class="editor" spellcheck="false">
+# This is a markdown
+
+- Item 1
+- Item 2
+- Item 3
+
+| id | name |
+| --- | --- |
+| 1 | John Doe |
+        </textarea>
+      </section>
+      <section class="panel">
+        <div class="preview-wrap">
+          <article id="preview" class="preview" aria-live="polite"></article>
+        </div>
+      </section>
+    </main>
+
+    <script>
+      const editor = document.getElementById("editor");
+      const preview = document.getElementById("preview");
+
+      function escapeHTML(value) {
+        return value
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
+      function renderInline(text) {
+        let safe = escapeHTML(text);
+
+        safe = safe.replace(/`([^`]+)`/g, "<code>$1</code>");
+        safe = safe.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+        safe = safe.replace(/\*([^*]+)\*/g, "<em>$1</em>");
+        safe = safe.replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noreferrer">$1</a>');
+
+        return safe;
+      }
+
+      function parseTable(block) {
+        if (block.length < 2) {
+          return null;
+        }
+
+        const separatorPattern = /^\s*\|?(?:\s*:?-{3,}:?\s*\|)+\s*:?-{3,}:?\s*\|?\s*$/;
+        if (!separatorPattern.test(block[1])) {
+          return null;
+        }
+
+        const rows = block.map((line) =>
+          line
+            .trim()
+            .replace(/^\|/, "")
+            .replace(/\|$/, "")
+            .split("|")
+            .map((cell) => renderInline(cell.trim()))
+        );
+
+        const headers = rows[0];
+        const bodyRows = rows.slice(2);
+
+        const headerHTML = headers.map((cell) => `<th>${cell}</th>`).join("");
+        const bodyHTML = bodyRows
+          .map((cells) => `<tr>${cells.map((cell) => `<td>${cell}</td>`).join("")}</tr>`)
+          .join("");
+
+        return `<table><thead><tr>${headerHTML}</tr></thead><tbody>${bodyHTML}</tbody></table>`;
+      }
+
+      function renderMarkdown(markdown) {
+        const normalized = markdown.replace(/\r\n?/g, "\n").trimEnd();
+        if (!normalized.trim()) {
+          return '<p class="empty">Start typing Markdown on the left.</p>';
+        }
+
+        const lines = normalized.split("\n");
+        const html = [];
+        let paragraph = [];
+        let listItems = [];
+        let listType = "";
+        let codeBlock = [];
+        let tableBlock = [];
+        let inCodeBlock = false;
+
+        function flushParagraph() {
+          if (paragraph.length === 0) {
+            return;
+          }
+
+          html.push(`<p>${renderInline(paragraph.join(" "))}</p>`);
+          paragraph = [];
+        }
+
+        function flushList() {
+          if (listItems.length === 0) {
+            return;
+          }
+
+          const tag = listType === "ol" ? "ol" : "ul";
+          html.push(`<${tag}>${listItems.map((item) => `<li>${renderInline(item)}</li>`).join("")}</${tag}>`);
+          listItems = [];
+          listType = "";
+        }
+
+        function flushCodeBlock() {
+          if (codeBlock.length === 0) {
+            return;
+          }
+
+          html.push(`<pre><code>${escapeHTML(codeBlock.join("\n"))}</code></pre>`);
+          codeBlock = [];
+        }
+
+        function flushTable() {
+          if (tableBlock.length === 0) {
+            return;
+          }
+
+          const tableHTML = parseTable(tableBlock);
+          if (tableHTML) {
+            html.push(tableHTML);
+          } else {
+            for (const line of tableBlock) {
+              paragraph.push(line);
+            }
+          }
+          tableBlock = [];
+        }
+
+        for (const line of lines) {
+          if (line.trim().startsWith("```")) {
+            flushParagraph();
+            flushList();
+            flushTable();
+
+            if (inCodeBlock) {
+              flushCodeBlock();
+            }
+
+            inCodeBlock = !inCodeBlock;
+            continue;
+          }
+
+          if (inCodeBlock) {
+            codeBlock.push(line);
+            continue;
+          }
+
+          if (/\|/.test(line) && line.trim() !== "") {
+            flushParagraph();
+            flushList();
+            tableBlock.push(line);
+            continue;
+          }
+
+          flushTable();
+
+          if (line.trim() === "") {
+            flushParagraph();
+            flushList();
+            continue;
+          }
+
+          const heading = line.match(/^(#{1,6})\s+(.*)$/);
+          if (heading) {
+            flushParagraph();
+            flushList();
+            html.push(`<h${heading[1].length}>${renderInline(heading[2].trim())}</h${heading[1].length}>`);
+            continue;
+          }
+
+          if (/^---+$/.test(line.trim()) || /^\*\*\*+$/.test(line.trim())) {
+            flushParagraph();
+            flushList();
+            html.push("<hr />");
+            continue;
+          }
+
+          const quote = line.match(/^>\s?(.*)$/);
+          if (quote) {
+            flushParagraph();
+            flushList();
+            html.push(`<blockquote>${renderInline(quote[1])}</blockquote>`);
+            continue;
+          }
+
+          const unordered = line.match(/^\s*[-*]\s+(.*)$/);
+          if (unordered) {
+            flushParagraph();
+            if (listType && listType !== "ul") {
+              flushList();
+            }
+            listType = "ul";
+            listItems.push(unordered[1]);
+            continue;
+          }
+
+          const ordered = line.match(/^\s*\d+\.\s+(.*)$/);
+          if (ordered) {
+            flushParagraph();
+            if (listType && listType !== "ol") {
+              flushList();
+            }
+            listType = "ol";
+            listItems.push(ordered[1]);
+            continue;
+          }
+
+          paragraph.push(line.trim());
+        }
+
+        flushTable();
+        flushParagraph();
+        flushList();
+        flushCodeBlock();
+
+        return html.join("");
+      }
+
+      function updatePreview() {
+        preview.innerHTML = renderMarkdown(editor.value);
+      }
+
+      editor.addEventListener("input", updatePreview);
+      updatePreview();
+    </script>
+  </body>
+</html>
