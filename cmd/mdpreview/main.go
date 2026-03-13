@@ -25,7 +25,7 @@ func main() {
 	}
 
 	server := apphttp.NewServer(cfg)
-	listener, err := net.Listen("tcp", cfg.Address())
+	listener, err := listenWithPortDiscovery(&cfg)
 	if err != nil {
 		log.Fatalf("listen failed: %v", err)
 	}
@@ -54,6 +54,25 @@ func main() {
 	if err := server.Shutdown(shutdownCtx); err != nil {
 		log.Fatalf("shutdown failed: %v", err)
 	}
+}
+
+func listenWithPortDiscovery(cfg *config.Config) (net.Listener, error) {
+	var lastErr error
+
+	for attempt := 1; attempt <= cfg.PortDiscoveryAttempts; attempt++ {
+		listener, err := net.Listen("tcp", cfg.Address())
+
+		if err == nil {
+			return listener, nil
+		}
+
+		lastErr = err
+
+		cfg.Port++
+		log.Printf("retrying with port discovery, current address http://%s:%d", cfg.Host, cfg.Port)
+	}
+
+	return nil, lastErr
 }
 
 func readyMessage(host string, port int, startup time.Duration) string {

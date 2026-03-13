@@ -6,13 +6,15 @@ import (
 )
 
 const (
-	DefaultHost = "0.0.0.0"
-	DefaultPort = 8631
+	DefaultHost                  = "0.0.0.0"
+	DefaultPort                  = 8631
+	DefaultPortDiscoveryAttempts = 10
 )
 
 type Config struct {
-	Host string
-	Port int
+	Host                  string
+	Port                  int
+	PortDiscoveryAttempts int
 }
 
 func (c Config) Address() string {
@@ -21,8 +23,9 @@ func (c Config) Address() string {
 
 func Parse(args []string) (Config, error) {
 	cfg := Config{
-		Host: DefaultHost,
-		Port: DefaultPort,
+		Host:                  DefaultHost,
+		Port:                  DefaultPort,
+		PortDiscoveryAttempts: DefaultPortDiscoveryAttempts,
 	}
 
 	fs := flag.NewFlagSet("mdpreview", flag.ContinueOnError)
