@@ -37,6 +37,7 @@
       }
 
       .panel {
+        display: flex;
         min-width: 0;
         background: var(--panel);
       }
@@ -46,8 +47,10 @@
       }
 
       .editor {
+        flex: 1 1 auto;
+        display: block;
         width: 100%;
-        min-height: 100vh;
+        min-height: 100%;
         border: 0;
         resize: none;
         padding: 18px 24px;
@@ -61,7 +64,8 @@
       }
 
       .preview-wrap {
-        min-height: 100vh;
+        flex: 1 1 auto;
+        min-height: 100%;
         padding: 18px 24px 48px;
         overflow: auto;
       }
@@ -190,6 +194,14 @@
         .editor,
         .preview-wrap {
           min-height: 50vh;
+          height: 50vh;
+        }
+
+        .preview-wrap {
+          overflow: auto;
+        }
+
+        .editor {
           overflow: auto;
         }
       }
