@@ -230,8 +230,10 @@
     </main>
 
     <script>
+      const STORAGE_KEY = "mdpreview_state";
       const editor = document.getElementById("editor");
       const preview = document.getElementById("preview");
+      const defaultMarkdown = editor.value;
 
       function escapeHTML(value) {
         return value
@@ -437,7 +439,33 @@
         preview.innerHTML = renderMarkdown(editor.value);
       }
 
-      editor.addEventListener("input", updatePreview);
+      function saveEditorState() {
+        try {
+          localStorage.setItem(STORAGE_KEY, editor.value);
+        } catch (_error) {
+          // Ignore storage failures and keep the editor functional.
+        }
+      }
+
+      function loadEditorState() {
+        try {
+          const savedMarkdown = localStorage.getItem(STORAGE_KEY);
+          if (savedMarkdown !== null || savedMarkdown !== "") {
+            editor.value = savedMarkdown
+          } else {
+            editor.value =  defaultMarkdown;
+          }
+        } catch (_error) {
+          editor.value = defaultMarkdown;
+        }
+      }
+
+      editor.addEventListener("input", () => {
+        saveEditorState();
+        updatePreview();
+      });
+
+      loadEditorState();
       updatePreview();
     </script>
   </body>
