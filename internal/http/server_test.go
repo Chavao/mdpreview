@@ -49,4 +49,8 @@ func TestNewServerServesIndex(t *testing.T) {
 	if !strings.Contains(bodyText, "<textarea") {
 		t.Fatalf("body missing textarea: %q", bodyText)
 	}
+
+	if !strings.Contains(bodyText, `id="view-toggle"`) {
+		t.Fatalf("body missing view toggle button: %q", bodyText)
+	}
 }

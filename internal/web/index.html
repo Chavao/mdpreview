@@ -84,7 +84,12 @@
         background: var(--toolbar-bg);
       }
 
-      .theme-toggle {
+      .toolbar-actions {
+        display: flex;
+        gap: 0.6rem;
+      }
+
+      .toolbar-button {
         border: 1px solid var(--toggle-border);
         border-radius: 999px;
         padding: 0.45rem 0.8rem;
@@ -95,7 +100,7 @@
         cursor: pointer;
       }
 
-      .theme-toggle:hover {
+      .toolbar-button:hover {
         filter: brightness(0.97);
       }
 
@@ -104,6 +109,19 @@
         grid-template-columns: minmax(320px, 1fr) minmax(320px, 1fr);
         min-height: 0;
         flex: 1 1 auto;
+      }
+
+      .markdown-app.preview-only {
+        grid-template-columns: 1fr;
+      }
+
+      .markdown-app.preview-only .panel-editor {
+        display: none;
+      }
+
+      .markdown-app.preview-only .panel-preview {
+        border-left: 0;
+        border-top: 0;
       }
 
       .panel {
@@ -279,12 +297,17 @@
   </head>
   <body>
     <header class="toolbar">
-      <button id="theme-toggle" class="theme-toggle" type="button" aria-pressed="false">
-        Dark mode
-      </button>
+      <div class="toolbar-actions">
+        <button id="view-toggle" class="toolbar-button" type="button" aria-pressed="false">
+          Preview only
+        </button>
+        <button id="theme-toggle" class="toolbar-button" type="button" aria-pressed="false">
+          Dark mode
+        </button>
+      </div>
     </header>
     <main class="markdown-app">
-      <section class="panel">
+      <section class="panel panel-editor">
         <textarea id="editor" class="editor" spellcheck="false">
 # This is a markdown
 
@@ -297,7 +320,7 @@
 | 1 | John Doe |
         </textarea>
       </section>
-      <section class="panel">
+      <section class="panel panel-preview">
         <div class="preview-wrap">
           <article id="preview" class="preview" aria-live="polite"></article>
         </div>
@@ -307,9 +330,14 @@
     <script>
       const STORAGE_KEY = "mdpreview_state";
       const THEME_KEY = "mdpreview_theme";
+      const VIEW_KEY = "mdpreview_view";
+      const VIEW_MODE_SPLIT = "split";
+      const VIEW_MODE_PREVIEW_ONLY = "preview-only";
       const editor = document.getElementById("editor");
       const preview = document.getElementById("preview");
       const themeToggle = document.getElementById("theme-toggle");
+      const viewToggle = document.getElementById("view-toggle");
+      const markdownApp = document.querySelector(".markdown-app");
       const defaultMarkdown = editor.value;
 
       function escapeHTML(value) {
@@ -568,9 +596,45 @@
         return "light";
       }
 
+      function saveViewMode(mode) {
+        try {
+          localStorage.setItem(VIEW_KEY, mode);
+        } catch (_error) {
+          // Ignore storage failures and keep the interface functional.
+        }
+      }
+
+      function setViewMode(mode) {
+        const isPreviewOnly = mode === VIEW_MODE_PREVIEW_ONLY;
+        markdownApp.classList.toggle(VIEW_MODE_PREVIEW_ONLY, isPreviewOnly);
+        viewToggle.setAttribute("aria-pressed", String(isPreviewOnly));
+        viewToggle.textContent = isPreviewOnly ? "Show editor" : "Preview only";
+      }
+
+      function loadViewMode() {
+        try {
+          const storedView = localStorage.getItem(VIEW_KEY);
+          if (storedView === VIEW_MODE_SPLIT || storedView === VIEW_MODE_PREVIEW_ONLY) {
+            return storedView;
+          }
+        } catch (_error) {
+          // Ignore storage failures and use safe fallback.
+        }
+
+        return VIEW_MODE_SPLIT;
+      }
+
       editor.addEventListener("input", () => {
         saveEditorState();
         updatePreview();
+      });
+
+      viewToggle.addEventListener("click", () => {
+        const nextMode = markdownApp.classList.contains(VIEW_MODE_PREVIEW_ONLY)
+          ? VIEW_MODE_SPLIT
+          : VIEW_MODE_PREVIEW_ONLY;
+        setViewMode(nextMode);
+        saveViewMode(nextMode);
       });
 
       themeToggle.addEventListener("click", () => {
@@ -580,6 +644,7 @@
       });
 
       loadEditorState();
+      setViewMode(loadViewMode());
       setTheme(loadTheme());
       updatePreview();
     </script>
