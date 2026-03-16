@@ -16,6 +16,46 @@
         --surface: #f5f5f5;
         --panel: #ffffff;
         --accent: #1d4ed8;
+        --toolbar-bg: #ffffff;
+        --toolbar-text: #111827;
+        --toggle-border: #d1d5db;
+        --toggle-bg: #f9fafb;
+        --toggle-text: #111827;
+        --editor-bg: #fafafa;
+        --editor-text: #1d4ed8;
+        --preview-text: #111827;
+        --heading: #111827;
+        --inline-code-bg: #e5e7eb;
+        --code-bg: #111827;
+        --code-text: #f9fafb;
+        --quote-border: #d1d5db;
+        --hr: #d1d5db;
+        --table-border: #cbd5e1;
+      }
+
+      body[data-theme="dark"] {
+        color-scheme: dark;
+        --border: #253041;
+        --text: #e5e7eb;
+        --muted: #9ca3af;
+        --surface: #111827;
+        --panel: #1f2937;
+        --accent: #93c5fd;
+        --toolbar-bg: #0f172a;
+        --toolbar-text: #f9fafb;
+        --toggle-border: #334155;
+        --toggle-bg: #1e293b;
+        --toggle-text: #f8fafc;
+        --editor-bg: #0f172a;
+        --editor-text: #bfdbfe;
+        --preview-text: #f3f4f6;
+        --heading: #f9fafb;
+        --inline-code-bg: #374151;
+        --code-bg: #020617;
+        --code-text: #f8fafc;
+        --quote-border: #4b5563;
+        --hr: #4b5563;
+        --table-border: #475569;
       }
 
       * {
@@ -28,12 +68,42 @@
         background: var(--surface);
         color: var(--text);
         font-family: "Iosevka Fixed", "Fira Code", "SFMono-Regular", Consolas, monospace;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .toolbar {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        padding: 12px 18px;
+        border-bottom: 1px solid var(--border);
+        background: var(--toolbar-bg);
+      }
+
+      .theme-toggle {
+        border: 1px solid var(--toggle-border);
+        border-radius: 999px;
+        padding: 0.45rem 0.8rem;
+        background: var(--toggle-bg);
+        color: var(--toggle-text);
+        font: inherit;
+        font-size: 0.85rem;
+        cursor: pointer;
+      }
+
+      .theme-toggle:hover {
+        filter: brightness(0.97);
       }
 
       .markdown-app {
         display: grid;
         grid-template-columns: minmax(320px, 1fr) minmax(320px, 1fr);
-        min-height: 100vh;
+        min-height: 0;
+        flex: 1 1 auto;
       }
 
       .panel {
@@ -54,8 +124,8 @@
         border: 0;
         resize: none;
         padding: 18px 24px;
-        background: #fafafa;
-        color: #1d4ed8;
+        background: var(--editor-bg);
+        color: var(--editor-text);
         font: inherit;
         font-size: 1rem;
         line-height: 1.45;
@@ -76,7 +146,7 @@
         font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
         font-size: 1rem;
         line-height: 1.6;
-        color: #111827;
+        color: var(--preview-text);
       }
 
       .preview > :first-child {
@@ -92,13 +162,13 @@
         margin: 0 0 0.6em;
         font-family: "IBM Plex Sans Condensed", "Segoe UI", sans-serif;
         line-height: 1.2;
-        color: #111827;
+        color: var(--heading);
       }
 
       .preview h1 {
         font-size: 3rem;
         font-weight: 700;
-        border-bottom: 2px solid #d1d5db;
+        border-bottom: 2px solid var(--hr);
         padding-bottom: 0.3em;
       }
 
@@ -132,7 +202,7 @@
       .preview code {
         padding: 0.12rem 0.35rem;
         border-radius: 4px;
-        background: #e5e7eb;
+        background: var(--inline-code-bg);
         font-family: "Iosevka Fixed", "Fira Code", monospace;
         font-size: 0.95em;
       }
@@ -141,8 +211,8 @@
         overflow-x: auto;
         padding: 0.85rem 1rem;
         border-radius: 8px;
-        background: #111827;
-        color: #f9fafb;
+        background: var(--code-bg);
+        color: var(--code-text);
       }
 
       .preview pre code {
@@ -153,13 +223,13 @@
 
       .preview blockquote {
         padding-left: 1rem;
-        border-left: 4px solid #d1d5db;
+        border-left: 4px solid var(--quote-border);
         color: var(--muted);
       }
 
       .preview hr {
         border: 0;
-        border-top: 1px solid #d1d5db;
+        border-top: 1px solid var(--hr);
       }
 
       .preview table {
@@ -169,7 +239,7 @@
       .preview th,
       .preview td {
         padding: 0.65rem 0.9rem;
-        border: 1px solid #cbd5e1;
+        border: 1px solid var(--table-border);
         text-align: left;
       }
 
@@ -208,6 +278,11 @@
     </style>
   </head>
   <body>
+    <header class="toolbar">
+      <button id="theme-toggle" class="theme-toggle" type="button" aria-pressed="false">
+        Dark mode
+      </button>
+    </header>
     <main class="markdown-app">
       <section class="panel">
         <textarea id="editor" class="editor" spellcheck="false">
@@ -231,8 +306,10 @@
 
     <script>
       const STORAGE_KEY = "mdpreview_state";
+      const THEME_KEY = "mdpreview_theme";
       const editor = document.getElementById("editor");
       const preview = document.getElementById("preview");
+      const themeToggle = document.getElementById("theme-toggle");
       const defaultMarkdown = editor.value;
 
       function escapeHTML(value) {
@@ -450,14 +527,45 @@
       function loadEditorState() {
         try {
           const savedMarkdown = localStorage.getItem(STORAGE_KEY);
-          if (savedMarkdown !== null || savedMarkdown !== "") {
-            editor.value = savedMarkdown
+          if (savedMarkdown !== null) {
+            editor.value = savedMarkdown;
           } else {
-            editor.value =  defaultMarkdown;
+            editor.value = defaultMarkdown;
           }
         } catch (_error) {
           editor.value = defaultMarkdown;
         }
+      }
+
+      function saveTheme(theme) {
+        try {
+          localStorage.setItem(THEME_KEY, theme);
+        } catch (_error) {
+          // Ignore storage failures and keep the interface functional.
+        }
+      }
+
+      function setTheme(theme) {
+        document.body.dataset.theme = theme;
+        themeToggle.setAttribute("aria-pressed", String(theme === "dark"));
+        themeToggle.textContent = theme === "dark" ? "Light mode" : "Dark mode";
+      }
+
+      function loadTheme() {
+        try {
+          const storedTheme = localStorage.getItem(THEME_KEY);
+          if (storedTheme === "dark" || storedTheme === "light") {
+            return storedTheme;
+          }
+        } catch (_error) {
+          // Ignore storage failures and use safe fallback.
+        }
+
+        if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+          return "dark";
+        }
+
+        return "light";
       }
 
       editor.addEventListener("input", () => {
@@ -465,7 +573,14 @@
         updatePreview();
       });
 
+      themeToggle.addEventListener("click", () => {
+        const nextTheme = document.body.dataset.theme === "dark" ? "light" : "dark";
+        setTheme(nextTheme);
+        saveTheme(nextTheme);
+      });
+
       loadEditorState();
+      setTheme(loadTheme());
       updatePreview();
     </script>
   </body>
