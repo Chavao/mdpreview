@@ -330,7 +330,6 @@
     <script>
       const STORAGE_KEY = "mdpreview_state";
       const THEME_KEY = "mdpreview_theme";
-      const VIEW_KEY = "mdpreview_view";
       const VIEW_MODE_SPLIT = "split";
       const VIEW_MODE_PREVIEW_ONLY = "preview-only";
       const editor = document.getElementById("editor");
@@ -596,32 +595,11 @@
         return "light";
       }
 
-      function saveViewMode(mode) {
-        try {
-          localStorage.setItem(VIEW_KEY, mode);
-        } catch (_error) {
-          // Ignore storage failures and keep the interface functional.
-        }
-      }
-
       function setViewMode(mode) {
         const isPreviewOnly = mode === VIEW_MODE_PREVIEW_ONLY;
         markdownApp.classList.toggle(VIEW_MODE_PREVIEW_ONLY, isPreviewOnly);
         viewToggle.setAttribute("aria-pressed", String(isPreviewOnly));
         viewToggle.textContent = isPreviewOnly ? "Show editor" : "Preview only";
-      }
-
-      function loadViewMode() {
-        try {
-          const storedView = localStorage.getItem(VIEW_KEY);
-          if (storedView === VIEW_MODE_SPLIT || storedView === VIEW_MODE_PREVIEW_ONLY) {
-            return storedView;
-          }
-        } catch (_error) {
-          // Ignore storage failures and use safe fallback.
-        }
-
-        return VIEW_MODE_SPLIT;
       }
 
       editor.addEventListener("input", () => {
@@ -634,7 +612,6 @@
           ? VIEW_MODE_SPLIT
           : VIEW_MODE_PREVIEW_ONLY;
         setViewMode(nextMode);
-        saveViewMode(nextMode);
       });
 
       themeToggle.addEventListener("click", () => {
@@ -644,7 +621,7 @@
       });
 
       loadEditorState();
-      setViewMode(loadViewMode());
+      setViewMode(VIEW_MODE_SPLIT);
       setTheme(loadTheme());
       updatePreview();
     </script>
