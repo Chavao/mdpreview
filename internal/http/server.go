@@ -11,6 +11,7 @@ import (
 func NewServer(cfg config.Config) *http.Server {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /", index)
+	mux.HandleFunc("POST /api/render", render)
 
 	return &http.Server{
 		Addr:              cfg.Address(),
