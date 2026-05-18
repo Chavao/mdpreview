@@ -338,209 +338,47 @@
       const viewToggle = document.getElementById("view-toggle");
       const markdownApp = document.querySelector(".markdown-app");
       const defaultMarkdown = editor.value;
+      let renderTimer = null;
+      let renderSequence = 0;
 
-      function escapeHTML(value) {
-        return value
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;")
-          .replace(/"/g, "&quot;")
-          .replace(/'/g, "&#39;");
-      }
+      async function requestPreview(markdownValue, sequence) {
+        const response = await fetch("/api/render", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ markdown: markdownValue }),
+        });
 
-      function renderInline(text) {
-        let safe = escapeHTML(text);
-
-        safe = safe.replace(/`([^`]+)`/g, "<code>$1</code>");
-        safe = safe.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
-        safe = safe.replace(/\*([^*]+)\*/g, "<em>$1</em>");
-        safe = safe.replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noreferrer">$1</a>');
-
-        return safe;
-      }
-
-      function parseTable(block) {
-        if (block.length < 2) {
-          return null;
+        if (!response.ok) {
+          throw new Error(`render request failed with status ${response.status}`);
         }
 
-        const separatorPattern = /^\s*\|?(?:\s*:?-{3,}:?\s*\|)+\s*:?-{3,}:?\s*\|?\s*$/;
-        if (!separatorPattern.test(block[1])) {
-          return null;
+        const body = await response.json();
+        if (typeof body.html !== "string") {
+          throw new Error("invalid render response");
         }
 
-        const rows = block.map((line) =>
-          line
-            .trim()
-            .replace(/^\|/, "")
-            .replace(/\|$/, "")
-            .split("|")
-            .map((cell) => renderInline(cell.trim()))
-        );
-
-        const headers = rows[0];
-        const bodyRows = rows.slice(2);
-
-        const headerHTML = headers.map((cell) => `<th>${cell}</th>`).join("");
-        const bodyHTML = bodyRows
-          .map((cells) => `<tr>${cells.map((cell) => `<td>${cell}</td>`).join("")}</tr>`)
-          .join("");
-
-        return `<table><thead><tr>${headerHTML}</tr></thead><tbody>${bodyHTML}</tbody></table>`;
-      }
-
-      function renderMarkdown(markdown) {
-        const normalized = markdown.replace(/\r\n?/g, "\n").trimEnd();
-        if (!normalized.trim()) {
-          return '<p class="empty">Start typing Markdown on the left.</p>';
+        if (sequence === renderSequence) {
+          preview.innerHTML = body.html;
         }
-
-        const lines = normalized.split("\n");
-        const html = [];
-        let paragraph = [];
-        let listItems = [];
-        let listType = "";
-        let codeBlock = [];
-        let tableBlock = [];
-        let inCodeBlock = false;
-
-        function flushParagraph() {
-          if (paragraph.length === 0) {
-            return;
-          }
-
-          html.push(`<p>${renderInline(paragraph.join(" "))}</p>`);
-          paragraph = [];
-        }
-
-        function flushList() {
-          if (listItems.length === 0) {
-            return;
-          }
-
-          const tag = listType === "ol" ? "ol" : "ul";
-          html.push(`<${tag}>${listItems.map((item) => `<li>${renderInline(item)}</li>`).join("")}</${tag}>`);
-          listItems = [];
-          listType = "";
-        }
-
-        function flushCodeBlock() {
-          if (codeBlock.length === 0) {
-            return;
-          }
-
-          html.push(`<pre><code>${escapeHTML(codeBlock.join("\n"))}</code></pre>`);
-          codeBlock = [];
-        }
-
-        function flushTable() {
-          if (tableBlock.length === 0) {
-            return;
-          }
-
-          const tableHTML = parseTable(tableBlock);
-          if (tableHTML) {
-            html.push(tableHTML);
-          } else {
-            for (const line of tableBlock) {
-              paragraph.push(line);
-            }
-          }
-          tableBlock = [];
-        }
-
-        for (const line of lines) {
-          if (line.trim().startsWith("```")) {
-            flushParagraph();
-            flushList();
-            flushTable();
-
-            if (inCodeBlock) {
-              flushCodeBlock();
-            }
-
-            inCodeBlock = !inCodeBlock;
-            continue;
-          }
-
-          if (inCodeBlock) {
-            codeBlock.push(line);
-            continue;
-          }
-
-          if (/\|/.test(line) && line.trim() !== "") {
-            flushParagraph();
-            flushList();
-            tableBlock.push(line);
-            continue;
-          }
-
-          flushTable();
-
-          if (line.trim() === "") {
-            flushParagraph();
-            flushList();
-            continue;
-          }
-
-          const heading = line.match(/^(#{1,6})\s+(.*)$/);
-          if (heading) {
-            flushParagraph();
-            flushList();
-            html.push(`<h${heading[1].length}>${renderInline(heading[2].trim())}</h${heading[1].length}>`);
-            continue;
-          }
-
-          if (/^---+$/.test(line.trim()) || /^\*\*\*+$/.test(line.trim())) {
-            flushParagraph();
-            flushList();
-            html.push("<hr />");
-            continue;
-          }
-
-          const quote = line.match(/^>\s?(.*)$/);
-          if (quote) {
-            flushParagraph();
-            flushList();
-            html.push(`<blockquote>${renderInline(quote[1])}</blockquote>`);
-            continue;
-          }
-
-          const unordered = line.match(/^\s*[-*]\s+(.*)$/);
-          if (unordered) {
-            flushParagraph();
-            if (listType && listType !== "ul") {
-              flushList();
-            }
-            listType = "ul";
-            listItems.push(unordered[1]);
-            continue;
-          }
-
-          const ordered = line.match(/^\s*\d+\.\s+(.*)$/);
-          if (ordered) {
-            flushParagraph();
-            if (listType && listType !== "ol") {
-              flushList();
-            }
-            listType = "ol";
-            listItems.push(ordered[1]);
-            continue;
-          }
-
-          paragraph.push(line.trim());
-        }
-
-        flushTable();
-        flushParagraph();
-        flushList();
-        flushCodeBlock();
-
-        return html.join("");
       }
 
       function updatePreview() {
-        preview.innerHTML = renderMarkdown(editor.value);
+        renderSequence += 1;
+        const currentSequence = renderSequence;
+
+        if (renderTimer !== null) {
+          clearTimeout(renderTimer);
+        }
+
+        renderTimer = setTimeout(() => {
+          requestPreview(editor.value, currentSequence).catch(() => {
+            if (currentSequence === renderSequence) {
+              preview.innerHTML = '<p class="empty">Preview unavailable. Keep typing to retry.</p>';
+            }
+          });
+        }, 80);
       }
 
       function saveEditorState() {
