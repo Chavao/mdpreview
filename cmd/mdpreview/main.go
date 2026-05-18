@@ -58,8 +58,12 @@ func main() {
 
 func listenWithPortDiscovery(cfg *config.Config) (net.Listener, error) {
 	var lastErr error
+	attempts := cfg.PortDiscoveryAttempts
+	if attempts < 1 {
+		attempts = config.DefaultPortDiscoveryAttempts
+	}
 
-	for attempt := 1; attempt <= cfg.PortDiscoveryAttempts; attempt++ {
+	for attempt := 1; attempt <= attempts; attempt++ {
 		listener, err := net.Listen("tcp", cfg.Address())
 
 		if err == nil {
