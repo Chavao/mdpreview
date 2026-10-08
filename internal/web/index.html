@@ -7,6 +7,12 @@
       content="width=device-width, initial-scale=1, maximum-scale=1"
     />
     <title>Markdown Preview</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.8.0/dist/mermaid.min.js"></script>
     <style>
       :root {
         color-scheme: light;
@@ -437,6 +443,28 @@
         padding: 0.1rem 0.3rem;
       }
 
+      .preview .mermaid-render {
+        padding: 1.25rem 1rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow-x: auto;
+      }
+
+      .preview .mermaid-render svg {
+        max-width: 100%;
+        height: auto;
+      }
+
+      .preview .math-render {
+        padding: 1.25rem 1rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow-x: auto;
+        font-size: 1.25rem;
+      }
+
       .preview .footnotes {
         margin-top: 2.5rem;
         font-size: 0.9rem;
@@ -682,6 +710,80 @@ graph TD;
 
         if (sequence === renderSequence) {
           preview.innerHTML = body.html;
+          renderDynamicExtensions();
+        }
+      }
+
+      async function renderDynamicExtensions() {
+        if (window.katex) {
+          preview.querySelectorAll(".math-inline").forEach((el) => {
+            const code = el.querySelector("code");
+            const formula = code ? code.textContent : el.textContent;
+            try {
+              katex.render(formula, el, {
+                displayMode: false,
+                throwOnError: false,
+              });
+            } catch (err) {
+              console.warn("KaTeX inline render error:", err);
+            }
+          });
+
+          preview.querySelectorAll(".math-block").forEach((block) => {
+            const code = block.querySelector("pre.math-display code");
+            if (!code) return;
+            const formula = code.textContent;
+            let target = block.querySelector(".math-render");
+            if (!target) {
+              target = document.createElement("div");
+              target.className = "math-render";
+              block.appendChild(target);
+            }
+            try {
+              katex.render(formula, target, {
+                displayMode: true,
+                throwOnError: false,
+              });
+              const pre = block.querySelector("pre.math-display");
+              if (pre) pre.style.display = "none";
+            } catch (err) {
+              console.warn("KaTeX display render error:", err);
+            }
+          });
+        }
+
+        if (window.mermaid) {
+          const isDark = document.body.dataset.theme === "dark";
+          mermaid.initialize({
+            startOnLoad: false,
+            theme: isDark ? "dark" : "default",
+            securityLevel: "loose",
+          });
+
+          const mermaidBlocks = preview.querySelectorAll(".mermaid-block");
+          for (let i = 0; i < mermaidBlocks.length; i++) {
+            const block = mermaidBlocks[i];
+            const code = block.querySelector("code.language-mermaid");
+            if (!code) continue;
+            const graphText = code.textContent.trim();
+            if (!graphText) continue;
+
+            try {
+              const renderId = "mermaid-svg-" + i + "-" + Math.floor(Math.random() * 1000000);
+              const { svg } = await mermaid.render(renderId, graphText);
+              let target = block.querySelector(".mermaid-render");
+              if (!target) {
+                target = document.createElement("div");
+                target.className = "mermaid-render";
+                block.appendChild(target);
+              }
+              target.innerHTML = svg;
+              const pre = block.querySelector("pre");
+              if (pre) pre.style.display = "none";
+            } catch (err) {
+              console.warn("Mermaid render error:", err);
+            }
+          }
         }
       }
 
@@ -777,6 +879,11 @@ graph TD;
         const nextTheme = document.body.dataset.theme === "dark" ? "light" : "dark";
         setTheme(nextTheme);
         saveTheme(nextTheme);
+        renderDynamicExtensions();
+      });
+
+      window.addEventListener("load", () => {
+        renderDynamicExtensions();
       });
 
       loadEditorState();
