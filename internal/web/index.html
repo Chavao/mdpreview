@@ -339,6 +339,120 @@
         background-clip: padding-box;
       }
 
+      .preview ul .task-list-item {
+        list-style-type: none;
+        margin-left: -1.2rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .preview .task-list-item input[type="checkbox"] {
+        margin: 0;
+        cursor: default;
+      }
+
+      .preview .markdown-alert {
+        margin: 1.25rem 0;
+        padding: 0.85rem 1.15rem;
+        border-left: 4px solid var(--accent);
+        border-radius: 6px;
+        background: rgba(29, 78, 216, 0.06);
+      }
+
+      .preview .markdown-alert-note {
+        border-left-color: #2563eb;
+        background: rgba(37, 99, 235, 0.08);
+      }
+
+      .preview .markdown-alert-tip {
+        border-left-color: #16a34a;
+        background: rgba(22, 163, 74, 0.08);
+      }
+
+      .preview .markdown-alert-important {
+        border-left-color: #8b5cf6;
+        background: rgba(139, 92, 246, 0.08);
+      }
+
+      .preview .markdown-alert-warning {
+        border-left-color: #ea580c;
+        background: rgba(234, 88, 12, 0.08);
+      }
+
+      .preview .markdown-alert-caution {
+        border-left-color: #dc2626;
+        background: rgba(220, 38, 38, 0.08);
+      }
+
+      .preview .markdown-alert-title {
+        font-weight: 700;
+        font-size: 0.85rem;
+        letter-spacing: 0.05em;
+        margin: 0 0 0.35rem;
+        text-transform: uppercase;
+      }
+
+      .preview .markdown-alert-note .markdown-alert-title { color: #2563eb; }
+      .preview .markdown-alert-tip .markdown-alert-title { color: #16a34a; }
+      .preview .markdown-alert-important .markdown-alert-title { color: #8b5cf6; }
+      .preview .markdown-alert-warning .markdown-alert-title { color: #ea580c; }
+      .preview .markdown-alert-caution .markdown-alert-title { color: #dc2626; }
+
+      body[data-theme="dark"] .preview .markdown-alert-note .markdown-alert-title { color: #60a5fa; }
+      body[data-theme="dark"] .preview .markdown-alert-tip .markdown-alert-title { color: #4ade80; }
+      body[data-theme="dark"] .preview .markdown-alert-important .markdown-alert-title { color: #c084fc; }
+      body[data-theme="dark"] .preview .markdown-alert-warning .markdown-alert-title { color: #fb923c; }
+      body[data-theme="dark"] .preview .markdown-alert-caution .markdown-alert-title { color: #f87171; }
+
+      .preview .mermaid-block,
+      .preview .math-block {
+        margin: 1.25rem 0;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        overflow: hidden;
+        background: var(--toggle-bg);
+      }
+
+      .preview .mermaid-label,
+      .preview .math-label {
+        padding: 0.35rem 0.85rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        border-bottom: 1px solid var(--border);
+        color: var(--muted);
+        background: var(--table-header-bg);
+      }
+
+      .preview .mermaid-block pre,
+      .preview .math-block pre {
+        margin: 0;
+        border-radius: 0;
+        border: 0;
+      }
+
+      .preview .math-inline {
+        padding: 0.1rem 0.3rem;
+      }
+
+      .preview .footnotes {
+        margin-top: 2.5rem;
+        font-size: 0.9rem;
+        color: var(--muted);
+      }
+
+      .preview .footnotes-sep {
+        margin: 1.5rem 0;
+      }
+
+      .preview .footnote-ref a,
+      .preview .footnote-backref {
+        text-decoration: none;
+        color: var(--accent);
+      }
+
       .preview .empty {
         color: var(--muted);
       }
@@ -383,15 +497,148 @@
     <main class="markdown-app">
       <section class="panel panel-editor">
         <textarea id="editor" class="editor" spellcheck="false">
-# This is a markdown
+# Markdown 2026 Specification Showcase
 
-- Item 1
-- Item 2
-- Item 3
+This document demonstrates all supported standard Markdown features and modern 2026 extensions.
 
-| id | name |
-| --- | --- |
-| 1 | John Doe |
+---
+
+## 1. Block Elements
+
+### Headings (H1 to H6)
+# Heading 1
+## Heading 2
+### Heading 3
+#### Heading 4
+##### Heading 5
+###### Heading 6
+
+### Paragraphs & Line Breaks
+This is a standard paragraph demonstrating text flow across lines.
+
+This line ends with two spaces to create a line break:  
+Here is the broken line.  
+Alternatively, you can use the break tag: Line one<br>Line two.
+
+### Blockquotes
+> This is a single-level blockquote spanning multiple lines.
+> Knowledge increases by sharing, not by saving.
+>> This is a nested blockquote providing further detail.
+
+### Lists
+#### Unordered Lists
+- Unordered item with hyphen
+  - Sub-item level 2 (2 spaces indented)
+    - Sub-item level 3 (4 spaces indented)
+* Unordered item with asterisk
++ Unordered item with plus sign
+
+#### Ordered Lists
+1. First step
+2. Second step
+   1. Sub-step 2.1
+   2. Sub-step 2.2
+3. Third step
+
+#### Task Lists
+- [x] Review the 2026 specification document
+- [x] Design renderer architecture
+- [ ] Implement parser extensions
+- [ ] Verify test suite coverage
+
+### Fenced Code Blocks
+Backtick block with language syntax:
+```typescript
+interface UserProfile {
+  id: string;
+  username: string;
+  active: boolean;
+}
+
+export function greet(user: UserProfile): string {
+  return `Hello, ${user.username}!`;
+}
+```
+
+Tilde block without language:
+~~~bash
+echo "Fenced code blocks also support tildes"
+~~~
+
+---
+
+## 2. Inline Elements
+
+### Emphasis
+- Italic with asterisks: *italic text*
+- Italic with underscores: _italic text_
+- Bold with asterisks: **bold text**
+- Bold with underscores: __bold text__
+- Bold and italic with asterisks: ***bold and italic text***
+- Bold and italic with underscores: ___bold and italic text___
+- Strikethrough: ~~strikethrough text~~
+
+### Links & Autolinks
+- Link with title: [OpenAI](https://openai.com "OpenAI Official Site")
+- Delimited autolink: <https://github.com>
+- Plain URL autolink: https://go.dev
+
+### Images
+![Sample Preview Image](https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=400 "Sample Image")
+
+### Inline Code
+Use the `console.log()` function to debug output in JavaScript.
+
+---
+
+## 3. Modern 2026 Extensions
+
+### Tables with Alignment
+| Left-Aligned Column | Centered Column | Right-Aligned Column |
+| :--- | :---: | ---: |
+| Item Alpha | Active | $150.00 |
+| Item Beta | Pending | $2,490.50 |
+| Item Gamma | Completed | $35.00 |
+
+### Footnotes
+Markdown was conceived as a lightweight formatting language[^1] and modernized over two decades[^2].
+
+[^1]: Created by John Gruber and Aaron Swartz in 2004.
+[^2]: Unified under CommonMark and modern industry extensions in 2026.
+
+### Callouts & Alerts
+> [!NOTE]
+> This is an informational callout highlighting relevant context.
+
+> [!WARNING]
+> Deprecated syntax will be rejected in strict parser mode.
+
+> [!TIP]
+> Use keyboard shortcuts to speed up your editing workflow.
+
+### Mathematical Expressions (LaTeX/KaTeX)
+Inline formula: The mass-energy equivalence is given by $E = mc^2$.
+
+Block formula:
+$$
+\frac{-b \pm \sqrt{b^2 - 4ac}}{2a}
+$$
+
+### Diagrams (Mermaid)
+```mermaid
+graph TD;
+    A[Start Preview]-->B{Specification Valid?};
+    B -- Yes --> C[Render HTML];
+    B -- No --> D[Show Parser Error];
+    C --> E[Display Output];
+```
+
+---
+
+## 4. Embedded HTML
+<span style="color: #2563eb; font-weight: bold;">This text is rendered with inline blue styling.</span>
+<br />
+<img src="https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?w=120" width="120" height="80" alt="HTML thumbnail" />
         </textarea>
       </section>
       <section class="panel panel-preview">
