@@ -2,10 +2,8 @@
 
 ## Run
 
-⚠️ A folder `bin` must exists in the `$HOME` folder and must be in the `$PATH`
-
 ```
-$ make release
+$ make install
 $ mdpreview
 ```
 Or

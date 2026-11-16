@@ -1,15 +1,33 @@
-.PHONY: clean build release
+.PHONY: all build test clean install check fmt fmt-check vet test-race
 
 BINARY_NAME=mdpreview
-BUILD_DIR=bin
+BIN_DIR=bin
 
-build: clean
-	@mkdir -p $(BUILD_DIR)
-	@go build -o $(BUILD_DIR)/$(BINARY_NAME).new ./cmd/$(BINARY_NAME)
-	@chmod 755 $(BUILD_DIR)/$(BINARY_NAME).new
+all: check build
+
+build:
+	@mkdir -p $(BIN_DIR)
+	go build -o $(BIN_DIR)/$(BINARY_NAME) ./cmd/${BINARY_NAME}
+
+install:
+	go install ./cmd/${BINARY_NAME}
+
+fmt:
+	gofmt -s -w .
+
+fmt-check:
+	@test -z "$$(gofmt -l .)" || (echo "Unformatted files found:" && gofmt -l . && exit 1)
+
+vet:
+	go vet ./...
+
+test:
+	go test -v ./...
+
+test-race:
+	go test -race ./...
+
+check: fmt-check vet test test-race
 
 clean:
-	@rm -rf $(BUILD_DIR)
-
-release: build
-	@mv $(BUILD_DIR)/$(BINARY_NAME).new "$(HOME)/bin/$(BINARY_NAME)"
+	rm -rf $(BIN_DIR)
