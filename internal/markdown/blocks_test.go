@@ -73,6 +73,13 @@ func TestRenderBlockElements(t *testing.T) {
 			},
 		},
 		{
+			name:  "pipes in list items",
+			input: "- First | second\n* Another | item\n  + Nested | item\n- [x] Done | checked\n1. Ordered | item",
+			contains: []string{
+				`<ul><li>First | second</li><li>Another | item<ul><li>Nested | item</li></ul></li><li class="task-list-item"><input type="checkbox" disabled checked /> Done | checked</li></ul><ol><li>Ordered | item</li></ol>`,
+			},
+		},
+		{
 			name:  "table with alignments",
 			input: "| Left | Center | Right |\n| :--- | :---: | ---: |\n| A | B | C |",
 			contains: []string{

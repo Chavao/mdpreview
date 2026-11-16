@@ -165,7 +165,7 @@ func Render(markdown string) string {
 		}
 
 		// 3. Tables
-		if strings.Contains(line, "|") && trimmed != "" {
+		if strings.Contains(line, "|") && trimmed != "" && !isListLine(line) {
 			flushParagraph()
 			flushList()
 			flushQuote()
